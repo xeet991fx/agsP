@@ -26,8 +26,5 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Backend specific
-backend/data/systemPrompts.json
-
 # Frontend specific
 frontend/dist/
