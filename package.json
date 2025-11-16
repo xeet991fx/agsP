@@ -1,0 +1,26 @@
+{
+  "name": "x-post-generator",
+  "version": "1.0.0",
+  "description": "High-quality X (Twitter) post generator using Google Gemini 2.5 Pro API",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "start:backend": "cd backend && npm start"
+  },
+  "keywords": [
+    "twitter",
+    "x",
+    "gemini",
+    "ai",
+    "content-generation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
