@@ -28,9 +28,9 @@ export async function generatePost({ userInput, customConfig }) {
       ? { ...MODEL_CONFIG, ...customConfig }
       : MODEL_CONFIG;
 
-    // Use Gemini 2.5 Pro with built-in system prompt
+    // Use Gemini 1.5 Pro with built-in system prompt
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-pro",
+      model: "gemini-1.5-pro",
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: modelConfig
     });
@@ -52,14 +52,14 @@ export async function generatePost({ userInput, customConfig }) {
       modelConfig,
       generatedText,
       duration: endTime - startTime,
-      model: "gemini-2.5-pro",
+      model: "gemini-1.5-pro",
       success: true
     });
 
     return {
       text: generatedText,
       metadata: {
-        model: "gemini-2.5-pro",
+        model: "gemini-1.5-pro",
         duration: endTime - startTime,
         characterCount: generatedText.length,
         timestamp: new Date().toISOString(),
@@ -100,7 +100,7 @@ export async function generatePost({ userInput, customConfig }) {
  */
 export async function validateApiKey() {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     await model.generateContent("test");
     return true;
   } catch (error) {
