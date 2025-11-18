@@ -1,5 +1,6 @@
 import express from 'express';
 import { generatePost } from '../services/geminiService.js';
+import { generatePostWithOpenRouter } from '../services/openrouterService.js';
 import { logError, logInfo } from '../utils/logger.js';
 
 const router = express.Router();
@@ -10,7 +11,7 @@ const router = express.Router();
  */
 router.post('/', async (req, res) => {
   try {
-    const { userInput, customConfig } = req.body;
+    const { userInput, customConfig, provider = 'openrouter' } = req.body;
 
     // Validation
     if (!userInput || !userInput.trim()) {
@@ -22,14 +23,23 @@ router.post('/', async (req, res) => {
     }
 
     logInfo('Generating post', {
-      userInputLength: userInput.trim().length
+      userInputLength: userInput.trim().length,
+      provider
     });
 
-    // Generate post using Gemini API with built-in system prompt
-    const result = await generatePost({
-      userInput: userInput.trim(),
-      customConfig
-    });
+    // Choose provider (OpenRouter by default for free models)
+    let result;
+    if (provider === 'gemini') {
+      result = await generatePost({
+        userInput: userInput.trim(),
+        customConfig
+      });
+    } else {
+      // Use OpenRouter with free models by default
+      result = await generatePostWithOpenRouter({
+        userInput: userInput.trim()
+      });
+    }
 
     // Check if output exceeds X's character limit
     const exceedsLimit = result.text.length > 280;

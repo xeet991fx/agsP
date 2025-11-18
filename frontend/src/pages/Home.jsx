@@ -1,28 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Copy, RefreshCw, Sun, Moon, Twitter, Check, AlertCircle, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, Copy, RefreshCw, Twitter, Check, AlertCircle, Zap } from 'lucide-react';
 import { generationAPI } from '../services/api';
 
 const Home = () => {
-  const [theme, setTheme] = useState('dark');
   const [userInput, setUserInput] = useState('');
   const [generatedPost, setGeneratedPost] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [metadata, setMetadata] = useState(null);
-
-  // Apply theme
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   const handleGenerate = async () => {
     if (!userInput.trim()) {
@@ -69,43 +55,12 @@ const Home = () => {
   const percentageFilled = Math.min((characterCount / 280) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
-                <Twitter size={24} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  X Post Generator
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  AI-powered content creation
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? (
-                <Sun size={20} className="text-yellow-500" />
-              ) : (
-                <Moon size={20} className="text-gray-700" />
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-blue-950/20 dark:to-purple-950/20 transition-colors duration-200"  >
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Input Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-6 space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               What do you want to post about?
@@ -153,7 +108,7 @@ const Home = () => {
 
         {/* Generated Post Display */}
         {generatedPost && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4">
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <Zap size={18} className="text-blue-500" />
@@ -219,7 +174,7 @@ const Home = () => {
             </div>
 
             {/* X-Style Preview */}
-            <div className="bg-black dark:bg-gray-950 border border-gray-800 rounded-2xl p-5">
+            <div className="bg-gray-950 dark:bg-black border border-gray-800 dark:border-gray-900 rounded-2xl p-5 shadow-inner">
               <div className="flex gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                   <Twitter size={20} className="text-white" />
@@ -316,10 +271,6 @@ const Home = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="max-w-4xl mx-auto px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-        <p>Powered by Google Gemini 2.5 Pro • Built for creators who value quality</p>
-      </footer>
     </div>
   );
 };

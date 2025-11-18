@@ -2,13 +2,22 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logGeneration, logError, logInfo } from '../utils/logger.js';
 import { SYSTEM_PROMPT, MODEL_CONFIG } from '../config/systemPrompt.js';
 
-const API_KEY = process.env.GEMINI_API_KEY;
+// Lazy initialization of API client
+let genAI = null;
 
-if (!API_KEY) {
-  console.warn('⚠️  GEMINI_API_KEY is not set. Generation will not work.');
+function getGenAI() {
+  if (!genAI) {
+    const API_KEY = process.env.GEMINI_API_KEY;
+
+    if (!API_KEY) {
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
+    }
+
+    genAI = new GoogleGenerativeAI(API_KEY);
+  }
+
+  return genAI;
 }
-
-const genAI = new GoogleGenerativeAI(API_KEY);
 
 /**
  * Generate X post using Gemini API with built-in system prompt
@@ -28,8 +37,8 @@ export async function generatePost({ userInput, customConfig }) {
       ? { ...MODEL_CONFIG, ...customConfig }
       : MODEL_CONFIG;
 
-    // Use Gemini 2.0 Flash (experimental) with built-in system prompt
-    const model = genAI.getGenerativeModel({
+    // Use Gemini 2.0 Flash Experimental with built-in system prompt
+    const model = getGenAI().getGenerativeModel({
       model: "gemini-2.0-flash-exp",
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: modelConfig
@@ -100,7 +109,7 @@ export async function generatePost({ userInput, customConfig }) {
  */
 export async function validateApiKey() {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = getGenAI().getGenerativeModel({ model: "gemini-2.0-flash-exp" });
     await model.generateContent("test");
     return true;
   } catch (error) {
