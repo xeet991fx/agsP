@@ -9,17 +9,6 @@ const api = axios.create({
   }
 });
 
-// Request interceptor for logging
-api.interceptors.request.use(
-  (config) => {
-    console.log(`[API] ${config.method.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
@@ -31,43 +20,26 @@ api.interceptors.response.use(
 );
 
 /**
- * Prompt Management APIs
+ * Post Generation API
  */
-export const promptsAPI = {
-  getAll: async () => {
-    const response = await api.get('/api/prompts');
-    return response.data;
-  },
-
-  getById: async (id) => {
-    const response = await api.get(`/api/prompts/${id}`);
-    return response.data;
-  },
-
-  create: async (promptData) => {
-    const response = await api.post('/api/prompts', promptData);
-    return response.data;
-  },
-
-  update: async (id, updates) => {
-    const response = await api.put(`/api/prompts/${id}`, updates);
-    return response.data;
-  },
-
-  delete: async (id) => {
-    const response = await api.delete(`/api/prompts/${id}`);
+export const generationAPI = {
+  /**
+   * Generate X post using AI
+   * @param {string} userInput - User's topic/idea
+   * @returns {Promise} API response
+   */
+  generatePost: async (userInput) => {
+    const response = await api.post('/api/generate', { userInput });
     return response.data;
   }
 };
 
 /**
- * Post Generation API
+ * Health check
  */
-export const generationAPI = {
-  generatePost: async (data) => {
-    const response = await api.post('/api/generate-post', data);
-    return response.data;
-  }
+export const healthCheck = async () => {
+  const response = await api.get('/health');
+  return response.data;
 };
 
 export default api;

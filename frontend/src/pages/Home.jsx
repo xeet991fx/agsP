@@ -1,132 +1,325 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Settings, Sparkles } from 'lucide-react';
-import PromptSelector from '../components/PromptSelector';
-import PostGenerator from '../components/PostGenerator';
-import { promptsAPI, generationAPI } from '../services/api';
+import { Sparkles, Copy, RefreshCw, Sun, Moon, Twitter, Check, AlertCircle, Zap } from 'lucide-react';
+import { generationAPI } from '../services/api';
 
 const Home = () => {
-  const [prompts, setPrompts] = useState([]);
-  const [selectedPromptId, setSelectedPromptId] = useState('');
+  const [theme, setTheme] = useState('dark');
+  const [userInput, setUserInput] = useState('');
+  const [generatedPost, setGeneratedPost] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingPrompts, setLoadingPrompts] = useState(true);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [metadata, setMetadata] = useState(null);
 
+  // Apply theme
   useEffect(() => {
-    loadPrompts();
-  }, []);
-
-  const loadPrompts = async () => {
-    try {
-      setLoadingPrompts(true);
-      const response = await promptsAPI.getAll();
-      setPrompts(response.data || []);
-
-      // Auto-select first prompt if available
-      if (response.data?.length > 0 && !selectedPromptId) {
-        setSelectedPromptId(response.data[0].id);
-      }
-    } catch (error) {
-      console.error('Failed to load prompts:', error);
-    } finally {
-      setLoadingPrompts(false);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const handleGenerate = async (data) => {
+  const handleGenerate = async () => {
+    if (!userInput.trim()) {
+      setError('Please enter your topic or idea');
+      return;
+    }
+
     setLoading(true);
+    setError('');
+    setGeneratedPost('');
+    setMetadata(null);
+
     try {
-      const response = await generationAPI.generatePost(data);
-      return response;
+      const result = await generationAPI.generatePost(userInput);
+      setGeneratedPost(result.data.text);
+      setMetadata(result.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to generate post. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCopy = async () => {
+    if (!generatedPost) return;
+
+    try {
+      await navigator.clipboard.writeText(generatedPost);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      handleGenerate();
+    }
+  };
+
+  const characterCount = generatedPost.length;
+  const exceedsLimit = characterCount > 280;
+  const percentageFilled = Math.min((characterCount / 280) * 100, 100);
+
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4">
+      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-x-blue to-blue-600 p-2 rounded-lg">
-                <Sparkles size={24} className="text-white" />
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
+                <Twitter size={24} className="text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-100">X Post Generator</h1>
-                <p className="text-sm text-gray-400">Powered by Gemini 2.5 Pro</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  X Post Generator
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  AI-powered content creation
+                </p>
               </div>
             </div>
-            <Link
-              to="/prompts"
-              className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle theme"
             >
-              <Settings size={18} />
-              <span className="hidden sm:inline">Manage Prompts</span>
-            </Link>
+              {theme === 'dark' ? (
+                <Sun size={20} className="text-yellow-500" />
+              ) : (
+                <Moon size={20} className="text-gray-700" />
+              )}
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        {loadingPrompts ? (
-          <div className="card text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-x-blue mx-auto mb-4"></div>
-            <p className="text-gray-400">Loading prompts...</p>
-          </div>
-        ) : prompts.length === 0 ? (
-          <div className="card text-center py-12">
-            <Sparkles size={48} className="text-gray-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-100 mb-2">Welcome to X Post Generator!</h2>
-            <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Get started by creating your first system prompt. This will define how the AI generates your X posts.
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Input Section */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              What do you want to post about?
+            </label>
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Enter your topic, idea, or content... (Press Ctrl/Cmd + Enter to generate)"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
+              rows={4}
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              💡 Tip: Be specific for better results. The AI will craft an engaging X post based on your input.
             </p>
-            <Link to="/prompts" className="btn-primary inline-flex items-center gap-2">
-              <Settings size={20} />
-              <span>Create Your First Prompt</span>
-            </Link>
           </div>
-        ) : (
-          <div className="card space-y-8">
-            {/* Prompt Selector */}
-            <PromptSelector
-              prompts={prompts}
-              selectedId={selectedPromptId}
-              onSelect={setSelectedPromptId}
-            />
 
-            {/* Post Generator */}
-            <PostGenerator
-              selectedPromptId={selectedPromptId}
-              onGenerate={handleGenerate}
-              loading={loading}
-            />
+          <button
+            onClick={handleGenerate}
+            disabled={loading || !userInput.trim()}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+          >
+            {loading ? (
+              <>
+                <RefreshCw size={20} className="animate-spin" />
+                <span>Generating amazing content...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={20} />
+                <span>Generate X Post</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+            <AlertCircle size={20} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="text-red-700 dark:text-red-300 text-sm">{error}</div>
           </div>
         )}
 
-        {/* Tips Section */}
-        <div className="mt-8 grid md:grid-cols-2 gap-4">
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-100 mb-2">💡 Quality Tips</h3>
-            <ul className="text-sm text-gray-400 space-y-1">
-              <li>• Use detailed, specific system prompts</li>
-              <li>• Experiment with different temperature settings</li>
-              <li>• Provide clear context in your input</li>
-              <li>• Edit and refine generated posts</li>
-            </ul>
+        {/* Generated Post Display */}
+        {generatedPost && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <Zap size={18} className="text-blue-500" />
+                Generated Post
+              </h3>
+
+              {/* Character Counter */}
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12">
+                  <svg className="transform -rotate-90 w-12 h-12">
+                    <circle
+                      cx="24"
+                      cy="24"
+                      r="20"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      className="text-gray-200 dark:text-gray-700"
+                    />
+                    <circle
+                      cx="24"
+                      cy="24"
+                      r="20"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 20}`}
+                      strokeDashoffset={`${2 * Math.PI * 20 * (1 - percentageFilled / 100)}`}
+                      className={`transition-all duration-300 ${
+                        exceedsLimit
+                          ? 'text-red-500'
+                          : percentageFilled > 90
+                          ? 'text-yellow-500'
+                          : 'text-blue-500'
+                      }`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className={`text-xs font-semibold ${
+                      exceedsLimit
+                        ? 'text-red-600 dark:text-red-400'
+                        : percentageFilled > 90
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {characterCount}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-sm">
+                  <div className={`font-semibold ${
+                    exceedsLimit
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}>
+                    {characterCount} / 280
+                  </div>
+                  {exceedsLimit && (
+                    <div className="text-xs text-red-500">Over limit!</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* X-Style Preview */}
+            <div className="bg-black dark:bg-gray-950 border border-gray-800 rounded-2xl p-5">
+              <div className="flex gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                  <Twitter size={20} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-white">Your Post</span>
+                    <span className="text-gray-500 text-sm">@yourhandle · now</span>
+                  </div>
+                  <p className="text-white text-base leading-relaxed whitespace-pre-wrap">
+                    {generatedPost}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Metadata */}
+            {metadata && (
+              <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-800">
+                <span>Model: {metadata.metadata?.model}</span>
+                <span>•</span>
+                <span>Generated in {metadata.metadata?.duration}ms</span>
+                {exceedsLimit && (
+                  <>
+                    <span>•</span>
+                    <span className="text-red-500 font-semibold">⚠️ Exceeds X character limit</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleCopy}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+              >
+                {copied ? (
+                  <>
+                    <Check size={18} />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={18} />
+                    <span>Copy to Clipboard</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all"
+              >
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                <span className="hidden sm:inline">Regenerate</span>
+              </button>
+            </div>
           </div>
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-100 mb-2">⚡ Quick Facts</h3>
-            <ul className="text-sm text-gray-400 space-y-1">
-              <li>• X character limit: 280</li>
-              <li>• Free tier: 25 requests/day</li>
-              <li>• Click "Regenerate" for variations</li>
-              <li>• Edit before copying to clipboard</li>
-            </ul>
+        )}
+
+        {/* Info Cards */}
+        <div className="grid md:grid-cols-3 gap-4 pt-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
+              <Sparkles size={16} />
+              AI-Powered
+            </h4>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              Generates authentic, engaging posts using Gemini 2.5 Pro
+            </p>
+          </div>
+
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+            <h4 className="font-semibold text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2">
+              <Zap size={16} />
+              Instant Results
+            </h4>
+            <p className="text-sm text-purple-700 dark:text-purple-400">
+              Get high-quality posts in seconds, ready to share
+            </p>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+            <h4 className="font-semibold text-green-900 dark:text-green-300 mb-2 flex items-center gap-2">
+              <Twitter size={16} />
+              X Optimized
+            </h4>
+            <p className="text-sm text-green-700 dark:text-green-400">
+              Automatically formatted for X's 280-character limit
+            </p>
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="max-w-4xl mx-auto px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p>Powered by Google Gemini 2.5 Pro • Built for creators who value quality</p>
+      </footer>
     </div>
   );
 };

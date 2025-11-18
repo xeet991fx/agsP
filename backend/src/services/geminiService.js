@@ -1,42 +1,38 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logGeneration, logError, logInfo } from '../utils/logger.js';
+import { SYSTEM_PROMPT, MODEL_CONFIG } from '../config/systemPrompt.js';
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
-  throw new Error('GEMINI_API_KEY is not set in environment variables');
+  console.warn('⚠️  GEMINI_API_KEY is not set. Generation will not work.');
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 /**
- * Generate X post using Gemini API with quality-optimized settings
+ * Generate X post using Gemini API with built-in system prompt
  * @param {Object} params - Generation parameters
- * @param {string} params.systemPrompt - Full system prompt text
  * @param {string} params.userInput - User's topic/idea
- * @param {Object} params.modelConfig - Model configuration (temperature, etc.)
- * @param {string} params.promptId - ID of the system prompt used
+ * @param {Object} params.customConfig - Optional custom model configuration
  * @returns {Promise<Object>} Generated post data
  */
-export async function generatePost({ systemPrompt, userInput, modelConfig, promptId }) {
+export async function generatePost({ userInput, customConfig }) {
   try {
     logInfo('Starting post generation', {
-      promptId,
-      userInputLength: userInput.length,
-      systemPromptLength: systemPrompt.length
+      userInputLength: userInput.length
     });
 
-    // Use Gemini 2.5 Pro (or experimental version for best quality)
-    // Note: Change to "gemini-2.5-pro-exp-03-25" if available for better results
+    // Merge default config with any custom overrides
+    const modelConfig = customConfig
+      ? { ...MODEL_CONFIG, ...customConfig }
+      : MODEL_CONFIG;
+
+    // Use Gemini 2.5 Pro with built-in system prompt
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-pro",
-      systemInstruction: systemPrompt,
-      generationConfig: {
-        temperature: modelConfig.temperature || 0.7,
-        maxOutputTokens: modelConfig.maxOutputTokens || 500,
-        topP: modelConfig.topP || 0.95,
-        topK: modelConfig.topK || 40,
-      }
+      systemInstruction: SYSTEM_PROMPT,
+      generationConfig: modelConfig
     });
 
     const startTime = Date.now();
@@ -52,8 +48,6 @@ export async function generatePost({ systemPrompt, userInput, modelConfig, promp
 
     // Log full generation for quality debugging
     await logGeneration({
-      promptId,
-      systemPrompt,
       userInput,
       modelConfig,
       generatedText,
@@ -68,7 +62,8 @@ export async function generatePost({ systemPrompt, userInput, modelConfig, promp
         model: "gemini-2.5-pro",
         duration: endTime - startTime,
         characterCount: generatedText.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        modelConfig
       }
     };
   } catch (error) {
@@ -76,10 +71,8 @@ export async function generatePost({ systemPrompt, userInput, modelConfig, promp
 
     // Log failed generation attempt
     await logGeneration({
-      promptId,
-      systemPrompt,
       userInput,
-      modelConfig,
+      modelConfig: customConfig || MODEL_CONFIG,
       error: error.message,
       success: false
     });

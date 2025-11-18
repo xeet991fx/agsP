@@ -1,9 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import promptsRouter from './routes/prompts.js';
 import generateRouter from './routes/generate.js';
-import { ensureDataDir } from './utils/fileHandler.js';
 import { logInfo, logError } from './utils/logger.js';
 
 // Load environment variables
@@ -18,8 +16,8 @@ app.use(cors({
   origin: FRONTEND_URL,
   credentials: true
 }));
-app.use(express.json({ limit: '10mb' })); // Support large prompts
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -35,13 +33,13 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    apiConfigured: !!process.env.GEMINI_API_KEY
   });
 });
 
 // API Routes
-app.use('/api/prompts', promptsRouter);
-app.use('/api/generate-post', generateRouter);
+app.use('/api/generate', generateRouter);
 
 // 404 handler
 app.use((req, res) => {
@@ -65,10 +63,6 @@ app.use((err, req, res, next) => {
 // Initialize and start server
 async function startServer() {
   try {
-    // Ensure data directory exists
-    await ensureDataDir();
-    logInfo('Data directory initialized');
-
     // Check for required environment variables
     if (!process.env.GEMINI_API_KEY) {
       console.warn('\n⚠️  WARNING: GEMINI_API_KEY is not set!');
@@ -76,25 +70,22 @@ async function startServer() {
     }
 
     app.listen(PORT, () => {
-      console.log('\n✨ X Post Generator Backend Started ✨\n');
-      console.log(`🚀 Server running on: http://localhost:${PORT}`);
-      console.log(`🌐 Frontend URL: ${FRONTEND_URL}`);
+      console.log('\n✨ X Post Generator - AI-Powered Content Creation ✨\n');
+      console.log(`🚀 Server: http://localhost:${PORT}`);
+      console.log(`🌐 Frontend: ${FRONTEND_URL}`);
       console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`📊 Logging enabled: ${process.env.LOG_GENERATIONS === 'true'}\n`);
+      console.log(`📊 Logging: ${process.env.LOG_GENERATIONS === 'true' ? 'Enabled' : 'Disabled'}\n`);
 
       if (!process.env.GEMINI_API_KEY) {
-        console.log('⚠️  API Key not configured - generation will not work');
+        console.log('⚠️  API Key: Not configured');
+        console.log('   → Add GEMINI_API_KEY to backend/.env');
       } else {
-        console.log('✅ API Key configured');
+        console.log('✅ API Key: Configured');
       }
 
-      console.log('\nAvailable endpoints:');
-      console.log('  GET    /health');
-      console.log('  GET    /api/prompts');
-      console.log('  POST   /api/prompts');
-      console.log('  PUT    /api/prompts/:id');
-      console.log('  DELETE /api/prompts/:id');
-      console.log('  POST   /api/generate-post\n');
+      console.log('\n📡 API Endpoints:');
+      console.log('   GET  /health');
+      console.log('   POST /api/generate\n');
     });
   } catch (error) {
     logError('Server startup', error);
